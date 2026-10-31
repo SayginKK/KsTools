@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KS TOOLS PANEL
 // @namespace    KS_TOOLS_PANEL
-// @version      1.96
+// @version      1.97
 // @license      GPL-3.0
 // @description  OtoHasar Dinamik Form Panel / Parça - Manuel ve Çoklu ekleme / Donanim Panel / SBM Tramer no ayırma ve resim indirme / Wp resim indirme / Gelişmiş Hasar Analiz / PDF -> JPG Dönüştürme ve boyutlandırma
 // @author       Saygın
@@ -3893,125 +3893,119 @@
                 tara();
                 new MutationObserver(tara).observe(document.body, { childList: true, subtree: true });
             }
-if (loc("eks_hasar_servis_src.php")) {
-    const clear = (el) => {
-        if (el.tagName === 'SELECT') el.selectedIndex = 0;
-        else if (el.type === 'text') el.value = '';
-        else if (el.type === 'checkbox') el.checked = false;
-    };
+            if (loc("eks_hasar_servis_src.php")) {
+                const clear = (el) => {
+                    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                    else if (el.type === 'text') el.value = '';
+                    else if (el.type === 'checkbox') el.checked = false;
+                };
 
-    const inputs = document.querySelectorAll('input[type="text"], select, input[type="checkbox"]');
-    const rows = new Map();
+                const inputs = document.querySelectorAll('input[type="text"], select, input[type="checkbox"]');
+                const rows = new Map();
 
-    inputs.forEach(el => {
-        // Hariç tutulacak alanlar
-        if (el.name === 'ANLASMALI' || el.name === 'E_MAIL' || el.name === 'MARKA_ID') {
-            return;
-        }
-
-        if (el.name && (el.name.startsWith('TEL1_') || el.name === 'VERGI_D' || el.name === 'VERGI_NO')) {
-            const parent = el.parentNode;
-            rows.set(parent, [...(rows.get(parent) || []), el]);
-        } else {
-            rows.set(el, [el]);
-        }
-    });
-
-    // ARA butonuna otomatik tıklama fonksiyonu
-    const triggerSearch = () => {
-        const araBtn = document.querySelector('input[type="submit"][value*="ARA"], input[name="Submit"]');
-        if (araBtn) {
-            araBtn.click();
-        }
-    };
-
-    rows.forEach((elements, key) => {
-        const lastEl = elements[elements.length - 1];
-        const parentNode = lastEl.parentNode;
-
-        const isPhoneRow = elements.some(el => el.name && el.name.startsWith('TEL1_'));
-        const isTaxRow = elements.some(el => el.name === 'VERGI_NO');
-
-        if (isPhoneRow || isTaxRow) {
-            const btnFill = document.createElement('input');
-            btnFill.type = 'button';
-            btnFill.value = 'doldur';
-            btnFill.className = 'BUTON02';
-            btnFill.style.cssText = 'cursor:pointer; margin-left:5px;';
-
-            btnFill.onclick = async () => {
-                try {
-                    const text = await navigator.clipboard.readText();
-                    const digits = text.replace(/\D/g, '');
-
-                    if (isPhoneRow) {
-                        let phone = '';
-                        const match = digits.match(/(?:90)?0?(5\d{9})/);
-                        if (match) {
-                            phone = match[1];
-                        } else if (digits.length >= 10) {
-                            const idx = digits.indexOf('5');
-                            if (idx !== -1 && digits.length - idx >= 10) {
-                                phone = digits.substr(idx, 10);
-                            }
-                        }
-
-                        if (phone.length === 10) {
-                            const t1 = elements.find(el => el.name === 'TEL1_1');
-                            const t2 = elements.find(el => el.name === 'TEL1_2');
-                            const t3 = elements.find(el => el.name === 'TEL1_3');
-                            const t4 = elements.find(el => el.name === 'TEL1_4');
-
-                            if (t1) { t1.value = phone.substr(0, 3); t1.dispatchEvent(new Event('keyup', { bubbles: true })); }
-                            if (t2) { t2.value = phone.substr(3, 3); t2.dispatchEvent(new Event('keyup', { bubbles: true })); }
-                            if (t3) { t3.value = phone.substr(6, 2); t3.dispatchEvent(new Event('keyup', { bubbles: true })); }
-                            if (t4) { t4.value = phone.substr(8, 2); t4.dispatchEvent(new Event('keyup', { bubbles: true })); }
-
-                            // Alanlar dolduktan sonra ARA butonuna bas
-                            triggerSearch();
-                        } else {
-                            alert('Panoda uygun formatta telefon numarası bulunamadı!');
-                        }
+                inputs.forEach(el => {
+                    // Hariç tutulacak alanlar
+                    if (el.name === 'ANLASMALI' || el.name === 'E_MAIL' || el.name === 'MARKA_ID') {
+                        return;
                     }
 
-                    if (isTaxRow) {
-                        const groups = text.match(/\d{10,11}/g);
-                        let tax = '';
-                        if (groups && groups.length > 0) {
-                            tax = groups.find(g => g.length === 10) || groups[0];
-                        }
-
-                        if (tax) {
-                            const vNo = elements.find(el => el.name === 'VERGI_NO');
-                            if (vNo) {
-                                vNo.value = tax;
-                                vNo.dispatchEvent(new Event('keyup', { bubbles: true }));
-
-                                // Vergi no dolduktan sonra ARA butonuna bas
-                                triggerSearch();
-                            }
-                        } else {
-                            alert('Panoda vergi/TC numarası bulunamadı!');
-                        }
+                    if (el.name && (el.name.startsWith('TEL1_') || el.name === 'VERGI_D' || el.name === 'VERGI_NO')) {
+                        const parent = el.parentNode;
+                        rows.set(parent, [...(rows.get(parent) || []), el]);
+                    } else {
+                        rows.set(el, [el]);
                     }
-                } catch (err) {
-                    console.error('Panodan okuma hatası:', err);
-                    alert('Panoya erişilemedi! Tarayıcı panosu izinlerini kontrol edin.');
-                }
-            };
-            parentNode.appendChild(btnFill);
-        }
+                });
 
-        const btnClear = document.createElement('input');
-        btnClear.type = 'button';
-        btnClear.value = 'x';
-        btnClear.className = 'BUTON02';
-        btnClear.style.cssText = 'cursor:pointer; margin-left:5px;';
-        btnClear.onclick = () => elements.forEach(clear);
+                // ARA butonuna otomatik tıklama fonksiyonu
+                const triggerSearch = () => {
+                    const araBtn = document.querySelector('input[type="submit"][value*="ARA"], input[name="Submit"]');
+                    if (araBtn) {
+                        araBtn.click();
+                    }
+                };
 
-        parentNode.appendChild(btnClear);
-    });
-}
+                rows.forEach((elements, key) => {
+                    const lastEl = elements[elements.length - 1];
+                    const parentNode = lastEl.parentNode;
+
+                    const isPhoneRow = elements.some(el => el.name && el.name.startsWith('TEL1_'));
+                    const isTaxRow = elements.some(el => el.name === 'VERGI_NO');
+
+                    if (isPhoneRow || isTaxRow) {
+                        const btnFill = document.createElement('input');
+                        btnFill.type = 'button';
+                        btnFill.value = 'doldur';
+                        btnFill.className = 'BUTON02';
+                        btnFill.style.cssText = 'cursor:pointer; margin-left:5px;';
+
+                        btnFill.onclick = async () => {
+                            try {
+                                const text = await navigator.clipboard.readText();
+                                const digits = text.replace(/\D/g, '');
+
+                                if (isPhoneRow) {
+                                    let phone = '';
+                                    // Cep (5xx) ve sabit (2xx/3xx/4xx) hat; boşluk, tire, parantez, 0, +90 olsa da olmasa da
+                                    const m = text.match(/(?<!\d)(?:\+?90[\s.-]*)?0?[\s.-]*\(?([2-5]\d{2})\)?[\s.-]*(\d{3})[\s.-]*(\d{2})[\s.-]*(\d{2})(?!\d)/);
+                                    if (m) phone = m[1] + m[2] + m[3] + m[4];
+
+                                    if (phone.length === 10) {
+                                        const t1 = elements.find(el => el.name === 'TEL1_1');
+                                        const t2 = elements.find(el => el.name === 'TEL1_2');
+                                        const t3 = elements.find(el => el.name === 'TEL1_3');
+                                        const t4 = elements.find(el => el.name === 'TEL1_4');
+
+                                        if (t1) { t1.value = phone.substr(0, 3); t1.dispatchEvent(new Event('keyup', { bubbles: true })); }
+                                        if (t2) { t2.value = phone.substr(3, 3); t2.dispatchEvent(new Event('keyup', { bubbles: true })); }
+                                        if (t3) { t3.value = phone.substr(6, 2); t3.dispatchEvent(new Event('keyup', { bubbles: true })); }
+                                        if (t4) { t4.value = phone.substr(8, 2); t4.dispatchEvent(new Event('keyup', { bubbles: true })); }
+
+                                        // Alanlar dolduktan sonra ARA butonuna bas
+                                        triggerSearch();
+                                    } else {
+                                        alert('Panoda uygun formatta telefon numarası bulunamadı!');
+                                    }
+                                }
+
+                                if (isTaxRow) {
+                                    const groups = text.match(/\d{10,11}/g);
+                                    let tax = '';
+                                    if (groups && groups.length > 0) {
+                                        tax = groups.find(g => g.length === 10) || groups[0];
+                                    }
+
+                                    if (tax) {
+                                        const vNo = elements.find(el => el.name === 'VERGI_NO');
+                                        if (vNo) {
+                                            vNo.value = tax;
+                                            vNo.dispatchEvent(new Event('keyup', { bubbles: true }));
+
+                                            // Vergi no dolduktan sonra ARA butonuna bas
+                                            triggerSearch();
+                                        }
+                                    } else {
+                                        alert('Panoda vergi/TC numarası bulunamadı!');
+                                    }
+                                }
+                            } catch (err) {
+                                console.error('Panodan okuma hatası:', err);
+                                alert('Panoya erişilemedi! Tarayıcı panosu izinlerini kontrol edin.');
+                            }
+                        };
+                        parentNode.appendChild(btnFill);
+                    }
+
+                    const btnClear = document.createElement('input');
+                    btnClear.type = 'button';
+                    btnClear.value = 'x';
+                    btnClear.className = 'BUTON02';
+                    btnClear.style.cssText = 'cursor:pointer; margin-left:5px;';
+                    btnClear.onclick = () => elements.forEach(clear);
+
+                    parentNode.appendChild(btnClear);
+                });
+            }
             // nokta virgül düzeltme
             const targets = ['BIRIM_FIYAT_GERCEK', 'BIRIM_FIYAT_TALEP'];
             function turn_dot() {
@@ -4185,7 +4179,7 @@ if (loc("eks_hasar_servis_src.php")) {
                 observer.observe(document.body, { childList: true, subtree: true });
 
             }
-            if (loc("eks_hasar.php") || loc("eks_hasar_magdur.php") || loc("eks_hasar_src.php") ) {
+            if (loc("eks_hasar.php") || loc("eks_hasar_magdur.php") || loc("eks_hasar_src.php")) {
 
                 const BASLANGIC_DEGERLERINI_DA_BUYUT = false; // true: sayfa açılışında dolu gelen değerleri de büyütür
                 const METIN_TIPLERI = ['', 'text', 'search'];
@@ -8612,6 +8606,7 @@ if (loc("eks_hasar_servis_src.php")) {
             if (renk) tr.style.setProperty('background-color', renk, 'important');
             else tr.style.removeProperty('background-color');
         };
+        // sıralama
         if (SBM && loc("online.sbm.org.tr") && loc("eksper/kolayGiris/list.sbm")) {
 
             function sirala() {
@@ -8650,62 +8645,20 @@ if (loc("eks_hasar_servis_src.php")) {
             GM_addStyle(`
 		        /* --- Sadece yerleşim --- */
 		        table#police td, table#police th,
-		        table#trafik td, table#trafik th {
-		            white-space:nowrap!important;
-		            vertical-align:middle!important;
-		        }
-
-		        .ajaxTable {
-		            overflow-x:auto!important;
-		        }
-
+		        table#trafik td, table#trafik th { white-space:nowrap!important; vertical-align:middle!important; }
+		        .ajaxTable { overflow-x:auto!important; }
 		        /* --- Hasar Farkı hücresi --- */
-		        td.tm-fark {
-		            font-weight:700!important;
-		            line-height:1.3!important;
-		            text-align:center!important;
-		            min-width:75px!important;
-		            width:75px!important;
-		            padding:4px 6px!important;
-		            white-space:nowrap!important;
-		        }
-
+		        td.tm-fark { font-weight:700!important; line-height:1.3!important; text-align:center!important; min-width:75px!important; width:75px!important; padding:4px 6px!important; white-space:nowrap!important; }
 		        /* --- Hasar Farkı renkleri KORUNDU --- */
-		        td.tm-ok {
-		            background:#dcfce7!important;
-		            color:#166534!important;
-		        }
-
-		        td.tm-warn {
-		            background:#fde68a!important;
-		            color:#92400e!important;
-		        }
-
-		        td.tm-bad {
-		            background:#fecaca!important;
-		            color:#991b1b!important;
-		        }
-
-		        td.tm-na {
-		            background:#f1f5f9!important;
-		            color:#64748b!important;
-		        }
-
+		        td.tm-ok { background:#dcfce7!important; color:#166534!important; }
+		        td.tm-warn { background:#fde68a!important; color:#92400e!important; }
+		        td.tm-bad { background:#fecaca!important; color:#991b1b!important; }
+		        td.tm-na { background:#f1f5f9!important; color:#64748b!important; }
 		        /* --- 30 gün ve altı yanıp söner --- */
-		        td.tm-blink {
-		            animation:tmBlink .8s ease-in-out infinite!important;
-		        }
-
+		        td.tm-blink { animation:tmBlink .8s ease-in-out infinite!important; }
 		        @keyframes tmBlink {
-		            0%,100% {
-		                filter:brightness(1);
-		                box-shadow:inset 0 0 0 0 rgba(220,38,38,0);
-		            }
-
-		            50% {
-		                filter:brightness(1.12);
-		                box-shadow:inset 0 0 0 3px rgba(220,38,38,.75);
-		            }
+		            0%,100% { filter:brightness(1); box-shadow:inset 0 0 0 0 rgba(220,38,38,0); }
+		            50% { filter:brightness(1.12); box-shadow:inset 0 0 0 3px rgba(220,38,38,.75); }
 		        }
 		    `);
             (function () {
@@ -8741,7 +8694,6 @@ if (loc("eks_hasar_servis_src.php")) {
                     return null;
                 }
                 function farkGun(hasar, tarih) { return dayDiff(hasar, tarih); }
-
                 function processTable(tbl, hasar) {
                     const headRow = tbl.querySelector("thead tr");
                     if (!headRow) return;
@@ -9075,12 +9027,13 @@ if (loc("eks_hasar_servis_src.php")) {
                 selectTdButon(document.querySelector('#ihbarPoliceSorguBilgileriForm\\.eksperiOlunanPlaka'), '#d5f5e3', '#1e8449', '#a9dfbf', '#145a32');
             }
         }
+
         // Sbm Ekran görüntüsü indirme / yükleme
         if (SBM && loc("online.sbm.org.tr")) {
             // ============ Resim indirme (sadece KTT tutanak resimleri listesi sayfası) ============
             const pjPanel = document.getElementById('pj-panel');
             if (pjPanel) pjPanel.style.display = 'none';
-            const aapanel = document.querySelector("#pj-panel"); forceLegacyColors(aapanel); html2canvas(aapanel).then(canvas => { document.body.appendChild(canvas); });
+            //const aapanel = document.querySelector("#pj-panel"); forceLegacyColors(aapanel); html2canvas(aapanel).then(canvas => { document.body.appendChild(canvas); });
             if (loc("trm-ktt/sirket/listShowTutanakResimleriPage.sbm")) {
                 const MIN_WIDTH = 300;
                 async function forceDownload(url, fileName) {
@@ -9094,7 +9047,7 @@ if (loc("eks_hasar_servis_src.php")) {
                         link.click();
                         document.body.removeChild(link);
                         unsafeWindow.URL.revokeObjectURL(link.href);
-                    } catch (error) { kslog("SBM", ("Resim indirilemedi:", url, error)); }
+                    } catch (error) { kslog("SBM", "Resim indirilemedi: " + url + " " + error); }
                 }
                 function initSbmDownloadPanel() {
                     if (document.getElementById('sbm-download-mini-panel')) return;
@@ -9128,7 +9081,365 @@ if (loc("eks_hasar_servis_src.php")) {
                 setTimeout(initSbmDownloadPanel, 2000);
             }
             // ============ Ekran görüntüsü indirme (sonuc / detay / KTT listView sayfaları) ============
-            const isSonuc = loc("genelSorguEksper/sonuc.sbm"), isDetay = loc("hasarEksper/detay.sbm"), isListView = loc("listView.sbm");
+            const isSonuc = loc("genelSorguEksper/sonuc.sbm") || loc("genelSorguEksper/sorguDetay"), isDetay = loc("hasarEksper/detay.sbm"), isListView = loc("listView.sbm");
+            const isDetayPage = isDetay || loc("atama/detay.sbm");
+            // ===== ORTAK NOT BLOĞU v5 (not + il/ilçe/telefon + ağır/kısmi hasar + çekme butonları) =====
+            // Eski bloğun yerine koy: "// ORTAK NOT BLOĞU" yorum başlığından, `let isKTTList` satırından
+            // önceki kapanış } dahil. (Dıştaki isDetayPage satırı kalsın.)
+            // v1 ile aynı çalışır; farkı: depoda il / ilce / tel alanları da tutulur ve listede
+            // salt-okunur sütun olarak gösterilir. Bu alanları detay scripti yazar (ks-detay-hook.js).
+            {
+                const KS_NOT_KEY = 'ks_talep_notlari_v2';   // aynı depo: mevcut notların korunur
+                const isAtamaPage = loc("hasarEksper/atama/");
+                const isAtamaList = isAtamaPage && !isDetay;
+                const FIELDS = ['servis', 'yan', 'il', 'ilce', 'tel', 'hasar'];   // hasar: 'agir' | 'kismi' | ''
+
+                // ---------- Depo ----------
+                const ksNot = {
+                    load() { try { return JSON.parse(localStorage.getItem(KS_NOT_KEY) || '{}') || {}; } catch { return {}; } },
+                    get(no) { const r = this.load()[no] || {}; const o = {}; FIELDS.forEach(f => o[f] = r[f] || ''); return o; },
+                    set(no, patch) {
+                        if (!no) return;
+                        const db = this.load();
+                        const cur = db[no] || {};
+                        const n = {};
+                        FIELDS.forEach(f => n[f] = cur[f] || '');
+                        Object.assign(n, patch);
+                        n.t = Date.now();
+                        if (FIELDS.every(f => !String(n[f]).trim())) delete db[no]; else db[no] = n;
+                        try { localStorage.setItem(KS_NOT_KEY, JSON.stringify(db)); } catch (e) { }
+                    }
+                };
+                unsafeWindow.__ksNot = ksNot;
+
+                const ksDebounce = (fn, wait) => { let t = null; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); }; };
+
+                // ---------- DETAY SAYFASI: servis adı + yan not -> depoya ----------
+                if (isDetayPage) {
+                    const SERVIS_SEL = '.tm-note-input';
+                    const YAN_SEL = '.tm-notes-area';
+
+                    const getDosyaNo = () => {
+                        const els = [...document.querySelectorAll('td, th, label, span, div')];
+                        for (const el of els) {
+                            const tx = el.innerText && el.innerText.trim();
+                            if (tx === 'Hasar Dosya No:' || tx === 'Hasar Dosya No') {
+                                const next = el.nextElementSibling;
+                                if (next && next.innerText && next.innerText.trim()) return next.innerText.trim();
+                            }
+                        }
+                        const m = document.body.innerText.match(/Hasar Dosya No[:\s]+([^\n]+)/);
+                        return m ? m[1].trim() : '';
+                    };
+
+                    const bind = (sel, field) => {
+                        const el = document.querySelector(sel);
+                        if (!el) return;
+                        const no = getDosyaNo();
+                        if (!no) return;
+                        if (!el.dataset.ksNotBound) {
+                            el.dataset.ksNotBound = '1';
+                            el.addEventListener('input', ksDebounce(() => ksNot.set(getDosyaNo(), { [field]: el.value.trim().toUpperCase() }), 250));
+                        }
+                        const want = ksNot.get(no)[field];
+                        if (document.activeElement !== el && want && el.value.trim().toUpperCase() !== want) {
+                            el.value = want;
+                            el.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    };
+                    // Ağır / Kısmi Hasar seçimi: seçilince depoya yaz, sayfa açılınca kayıtlı seçimi geri getir
+                    let hasarRestored = false;
+                    const bindHasar = () => {
+                        const toggle = document.querySelector('#tm-notes-panel .tm-hasar-toggle');
+                        if (!toggle) return;
+                        const no = getDosyaNo();
+                        if (!no) return;
+                        if (!toggle.dataset.ksHasarBound) {
+                            toggle.dataset.ksHasarBound = '1';
+                            toggle.addEventListener('click', () => {   // butonun kendi tıklaması önce çalışır, sınıflar güncellenmiş olur
+                                const on = toggle.querySelector('.tm-hasar-btn.tm-on');
+                                ksNot.set(getDosyaNo(), { hasar: on ? on.dataset.type : '' });
+                            });
+                        }
+                        if (!hasarRestored) {
+                            hasarRestored = true;
+                            const want = ksNot.get(no).hasar;
+                            if (want && !toggle.querySelector('.tm-hasar-btn.tm-on')) {
+                                const b = toggle.querySelector('.tm-hasar-btn[data-type="' + want + '"]');
+                                if (b) b.click();
+                            }
+                        }
+                    };
+
+                    setInterval(() => { bind(SERVIS_SEL, 'servis'); bind(YAN_SEL, 'yan'); bindHasar(); }, 800);
+                }
+
+                // ---------- LİSTE SAYFASI: İl / İlçe / Telefon (salt okunur) + Servis / Yan Not ----------
+                if (isAtamaList) {
+                    const TABLE_ID = 'hasarEksperAtama';
+                    const DOSYA_COL = 1;   // 0: Ref No, 1: Hasar Dosya No
+                    const COLS = [
+                        { field: 'il', title: 'İl', min: 90, ro: true },
+                        { field: 'ilce', title: 'İlçe', min: 100, ro: true },
+                        { field: 'tel', title: 'Telefon', min: 110, ro: true },
+                        { field: 'hasar', title: 'Hasar', min: 70, ro: true, map: { agir: 'AĞIR', kismi: 'KISMI' } },
+                        { field: 'servis', title: 'Servis', min: 150, ph: 'Servis...' },
+                        { field: 'yan', title: 'Yan Not', min: 240, ph: 'Not...' }
+                    ];
+
+                    const css = document.createElement('style');
+                    css.textContent = `
+            #${TABLE_ID} td.ks-not-cell { padding: 4px 6px; }
+            #${TABLE_ID} td.ks-info-cell { padding: 4px 8px; font-weight: bold; white-space: nowrap; }
+            #${TABLE_ID} td.ks-info-cell[data-v="agir"] { color: #c0392b; }
+            #${TABLE_ID} td.ks-info-cell[data-v="kismi"] { color: #b9770e; }
+            /* Görüntüle: göz ikonu yerine yazılı buton */
+            #${TABLE_ID} a.js-link--view { display: inline-flex !important; align-items: center; justify-content: center; width: auto !important; height: auto !important; padding: 6px 16px !important; margin: 0 !important; background: #1a365d !important; color: #fff !important; border-radius: 5px !important; font-size: 13px !important; font-weight: bold !important; line-height: 1.2 !important; text-decoration: none !important; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+            #${TABLE_ID} a.js-link--view:hover { background: #14294a !important; }
+            #${TABLE_ID} a.js-link--view i { display: none !important; }
+            #${TABLE_ID} a.js-link--view span { display: inline !important; position: static !important; width: auto !important; height: auto !important; clip: auto !important; overflow: visible !important; text-indent: 0 !important; font-size: 13px !important; color: #fff !important; visibility: visible !important; opacity: 1 !important; }
+            #${TABLE_ID} .ks-not-input { width: 100%; box-sizing: border-box; font-size: 14px; font-weight: bold; text-transform: uppercase; padding: 5px 8px; border: 1px dashed #a0aec0; border-radius: 4px; background: #fffef5; outline: none; font-family: inherit; }
+            #${TABLE_ID} .ks-not-input:focus { border-color: #1a365d; background: #fff; }
+        `;
+                    document.head.appendChild(css);
+
+                    const syncList = () => {
+                        const table = document.getElementById(TABLE_ID);
+                        if (!table) return;
+
+                        const headRow = table.querySelector('thead tr');
+                        if (headRow) COLS.forEach(c => {
+                            if (headRow.querySelector('.ks-not-th[data-f="' + c.field + '"]')) return;
+                            const th = document.createElement('th');
+                            th.className = 'header ks-not-th';
+                            th.dataset.f = c.field;
+                            th.style.minWidth = c.min + 'px';
+                            th.textContent = c.title;
+                            headRow.appendChild(th);
+                        });
+
+                        if (headRow) {   // "İşlemler" sütunu en sağda kalsın
+                            const th = [...headRow.children].find(h => h.textContent.trim() === 'İşlemler');
+                            if (th && th !== headRow.lastElementChild) headRow.appendChild(th);
+                        }
+
+                        const db = ksNot.load();   // senkronizasyon başına tek okuma
+                        const rows = [...table.querySelectorAll('tbody > tr')]
+                            .filter(tr => tr.children.length > DOSYA_COL && !tr.querySelector('td[colspan]'));
+
+                        rows.forEach(tr => {
+                            const dosyaNo = tr.children[DOSYA_COL].textContent.trim();
+                            if (!dosyaNo) return;
+                            const saved = db[dosyaNo] || {};
+
+                            COLS.forEach(c => {
+                                let td = tr.querySelector('td[data-f="' + c.field + '"]');
+
+                                if (c.ro) {   // detaydan gelen bilgi: salt okunur
+                                    if (!td) {
+                                        td = document.createElement('td');
+                                        td.className = 'ks-info-cell';
+                                        td.dataset.f = c.field;
+                                        tr.appendChild(td);
+                                    }
+                                    const raw = saved[c.field] || '';
+                                    const want = c.map ? (c.map[raw] || '') : raw;
+                                    if (td.textContent !== want) td.textContent = want;
+                                    if ((td.dataset.v || '') !== raw) td.dataset.v = raw;
+                                    return;
+                                }
+
+                                let input;
+                                if (!td) {
+                                    td = document.createElement('td');
+                                    td.className = 'ks-not-cell';
+                                    td.dataset.f = c.field;
+                                    input = document.createElement('input');
+                                    input.type = 'text';
+                                    input.className = 'ks-not-input';
+                                    input.placeholder = c.ph;
+                                    input.autocomplete = 'off';
+                                    input.spellcheck = false;
+                                    input.style.minWidth = (c.min - 10) + 'px';
+                                    input.addEventListener('input', ksDebounce(() => ksNot.set(dosyaNo, { [c.field]: input.value.trim().toUpperCase() }), 250));
+                                    td.appendChild(input);
+                                    tr.appendChild(td);
+                                } else {
+                                    input = td.querySelector('.ks-not-input');
+                                }
+                                if (document.activeElement !== input) {
+                                    const want = saved[c.field] || '';
+                                    if (input.value.trim().toUpperCase() !== want) input.value = want;
+                                }
+                            });
+
+                            // "İşlemler" hücresi (Görüntüle) en sağda kalsın
+                            const act = tr.querySelector('.table-actions');
+                            const actTd = act && act.closest('td');
+                            if (actTd && actTd !== tr.lastElementChild) tr.appendChild(actTd);
+                        });
+                    };
+
+                    const dSync = ksDebounce(syncList, 250);
+                    new MutationObserver(dSync).observe(document.body, { childList: true, subtree: true });
+                    // başka sekmede (detay) yazılan bilgi anında listeye yansısın
+                    window.addEventListener('storage', e => { if (e.key === KS_NOT_KEY) dSync(); });
+                    syncList();
+
+                    // ---------- list.sbm açılınca "Levha No" seçeneğini otomatik seç ----------
+                    if (loc("atama/list.sbm")) {
+                        let denemeSayi = 0;
+                        const lvIv = setInterval(() => {
+                            const el = document.getElementById('selectedSection4');
+                            if (el) {
+                                clearInterval(lvIv);
+                                if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) el.click();   // click: sitenin kendi change olayları da çalışsın
+                            } else if (++denemeSayi > 40) { clearInterval(lvIv); }   // ~10 sn bulunamazsa vazgeç
+                        }, 250);
+                    }
+
+                    // ---------- Detaylardan İl / İlçe / Telefon çek (sağ üst butonlar) ----------
+                    const bekleMs = (ms) => new Promise(r => setTimeout(r, ms));
+                    const fmtPhone = (raw) => {
+                        if (!raw) return '';
+                        const d = raw.replace(/\D/g, '');
+                        const m = d.match(/^(\d{3})(\d{3})(\d{2})(\d{2})$/);
+                        return m ? `${m[1]} ${m[2]} ${m[3]} ${m[4]}` : raw.trim();
+                    };
+                    const blockInfo = (fields, startsWith, stops) => {
+                        const o = { telefon: '', il: '', ilce: '' };
+                        const i0 = fields.findIndex(f => { const l = f.querySelector('.field-label'); return l && l.textContent.trim().startsWith(startsWith); });
+                        if (i0 === -1) return o;
+                        for (let i = i0; i < fields.length; i++) {
+                            const l = fields[i].querySelector('.field-label');
+                            if (!l) continue;
+                            const t = l.textContent.trim();
+                            if (i !== i0 && stops.some(p => t.startsWith(p))) break;
+                            const c = fields[i].querySelector('.field-controls');
+                            const v = c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
+                            if (!o.telefon && t.startsWith('Telefon')) o.telefon = v;
+                            else if (!o.il && t.startsWith('İl:')) o.il = v;
+                            else if (!o.ilce && t.startsWith('İlçe:')) o.ilce = v;
+                            if (o.telefon && o.il && o.ilce) break;
+                        }
+                        return o;
+                    };
+                    const fetchInfo = async (url) => {
+                        const r = await fetch(url, { credentials: 'include' });
+                        const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+                        const panel = [...doc.querySelectorAll('.container-fieldset')]
+                            .find(p => /Talep Detayı/.test((p.querySelector('.fieldset-header') || {}).textContent || ''))
+                            || doc.querySelector('.container-fieldset');
+                        if (!panel) return null;
+                        const fields = [...panel.querySelectorAll('.field')];
+                        const tam = blockInfo(fields, 'Tamirhane', ['Eksper Bilgileri']);
+                        const eks = blockInfo(fields, 'Ekspertiz Yeri', ['Tamirhane', 'Eksper Bilgileri']);
+                        let no = '';
+                        for (const f of fields) {
+                            const l = f.querySelector('.field-label');
+                            if (l && l.textContent.includes('Hasar Dosya No')) { const c = f.querySelector('.field-controls'); no = c ? c.textContent.trim() : ''; break; }
+                        }
+                        return { no, il: tam.il || eks.il, ilce: tam.ilce || eks.ilce, tel: fmtPhone(tam.telefon || eks.telefon) };
+                    };
+
+                    // ---------- Sayfadaki satırlar ----------
+                    const rowsInfo = () => {
+                        const t = document.getElementById(TABLE_ID);
+                        if (!t) return [];
+                        return [...t.querySelectorAll('tbody > tr')]
+                            .filter(tr => tr.children.length > DOSYA_COL && !tr.querySelector('td[colspan]'))
+                            .map(tr => ({ no: tr.children[DOSYA_COL].textContent.trim(), a: tr.querySelector('a.js-link--view') }))
+                            .filter(x => x.no && x.a);
+                    };
+                    const pending = () => { const db = ksNot.load(); return rowsInfo().filter(x => { const s = db[x.no] || {}; return !(s.il && s.ilce && s.tel); }); };
+
+                    let busy = false, stopFlag = false;
+
+                    const runPage = async (setTxt) => {
+                        const list = pending();
+                        let n = 0;
+                        for (const x of list) {
+                            if (stopFlag) break;
+                            n++; setTxt(`${n}/${list.length}`);
+                            try {
+                                const info = await fetchInfo(x.a.href);
+                                if (info && (!info.no || info.no === x.no)) {      // farklı dosya geldiyse yazma
+                                    const patch = {};
+                                    if (info.il) patch.il = info.il;
+                                    if (info.ilce) patch.ilce = info.ilce;
+                                    if (info.tel) patch.tel = info.tel;
+                                    if (Object.keys(patch).length) { ksNot.set(x.no, patch); dSync(); }
+                                } else { console.warn('SBM bilgi çekme: dosya no uyuşmadı', x.no, info && info.no); }
+                            } catch (e) { console.error('SBM bilgi çekme hatası', x.no, e); }
+                            await bekleMs(300);
+                        }
+                    };
+
+                    const nextLink = () => { const a = document.querySelector('.page-nav-list li.next a'); return a && !a.classList.contains('disabled') ? a : null; };
+                    const firstNo = () => { const r = rowsInfo()[0]; return r ? r.no : ''; };
+
+                    const runAll = async (setTxt) => {
+                        let page = 0;
+                        while (!stopFlag) {
+                            page++;
+                            await runPage(t => setTxt(`s.${page} ${t}`));
+                            const nx = nextLink();
+                            if (!nx || stopFlag) break;
+                            const before = firstNo();
+                            nx.click();                                               // sitenin kendi ajax sayfalaması
+                            for (let i = 0; i < 60 && firstNo() === before; i++) await bekleMs(250);
+                            if (firstNo() === before) break;                          // sayfa değişmedi, dur
+                            await bekleMs(500);
+                        }
+                    };
+
+                    // ---------- Butonlar (sağ üst) ----------
+                    const bar = document.createElement('div');
+                    bar.style.cssText = 'position:absolute;right:14px;top:50%;transform:translateY(-50%);z-index:5;display:flex;gap:6px;';
+                    // başlığa tıklamak listeyi daraltıyor; butonlara tıklayınca tetiklenmesin
+                    ['click', 'mousedown'].forEach(ev => bar.addEventListener(ev, e => e.stopPropagation()));
+                    const mkBtn = (text, bg) => {
+                        const b = document.createElement('button');
+                        b.type = 'button'; b.textContent = text;
+                        b.style.cssText = `background:${bg};color:#fff;border:0;border-radius:4px;padding:4px 10px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap;`;
+                        bar.appendChild(b); return b;
+                    };
+                    const bCek = mkBtn('📥 Bu sayfayı çek', '#2e86c1');
+                    const bTum = mkBtn('📥 Tüm sayfalar', '#1e8449');
+                    const bStop = mkBtn('Durdur', '#c0392b');
+                    bStop.style.display = 'none';
+                    // Liste çerçevesinin (Ekspertiz Talepleri) başlık satırının sağ üstüne yerleştir
+                    const placeBar = () => {
+                        const t = document.getElementById(TABLE_ID);
+                        const header = t && t.closest('.container-fieldset') && t.closest('.container-fieldset').querySelector('.fieldset-header');
+                        if (!header) return;
+                        if (getComputedStyle(header).position === 'static') header.style.position = 'relative';
+                        if (bar.parentNode !== header) header.appendChild(bar);
+                    };
+                    placeBar();
+                    setInterval(placeBar, 1000);   // tablo ajax ile gelirse / yeniden çizilirse tekrar yerleştirir
+
+                    const calistir = async (btn, orijinal, fn) => {
+                        if (busy) return;
+                        busy = true; stopFlag = false;
+                        bStop.style.display = 'inline-block';
+                        try { await fn(t => { btn.textContent = t; }); btn.textContent = 'Bitti ✓'; }
+                        catch (e) { console.error(e); btn.textContent = 'Hata'; }
+                        finally {
+                            busy = false; bStop.style.display = 'none';
+                            setTimeout(() => { btn.textContent = orijinal; }, 2500);
+                        }
+                    };
+                    bCek.onclick = () => calistir(bCek, '📥 Bu sayfayı çek', runPage);
+                    bTum.onclick = () => {
+                        if (!confirm('Tüm sayfalar sırayla taranacak (her kayıt için arka planda detay açılır). Devam edilsin mi?')) return;
+                        calistir(bTum, '📥 Tüm sayfalar', runAll);
+                    };
+                    bStop.onclick = () => { stopFlag = true; };
+
+                }
+            }
+
             let isKTTList = false;
             const takeScreenshot = async () => {
                 const btn = document.getElementById('sbm-ss-btn');
@@ -9144,7 +9455,6 @@ if (loc("eks_hasar_servis_src.php")) {
                 try {
                     const scrollHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight, document.documentElement.offsetHeight);
                     // === Geniş tabloyu tespit et ve gerekli küçültme oranını (scale) hesapla ===
-                    let culpritScale = null;
                     const wideContainers = document.querySelectorAll('.table-wrapper, .ajaxTable');
                     wideContainers.forEach(el => {
                         const table = el.querySelector('table');
@@ -9163,7 +9473,7 @@ if (loc("eks_hasar_servis_src.php")) {
                         onclone: (clonedDoc) => {
                             clonedDoc.querySelectorAll('#pj-panel, #pj-panel *').forEach(el => { el.style.background = '#333'; el.style.backgroundColor = '#333'; el.style.color = '#fff'; el.style.boxShadow = 'none'; el.style.borderColor = '#555'; });
                             clonedDoc.body.style.cssText = "background:#fff;height:auto;overflow:visible;";
-                            const removeSelectors = ['.polite__alert', '#ks-global-status-indicator', '.cc-window', '#sbm-ss-btn', '#tramer-panel', '.ui-draggable-handle', ...(isKTTList ? ['.dropdown--user', '#menuArama'] : [])].join(',');
+                            const removeSelectors = ['.polite__alert', '#ks-global-status-indicator', '#ks-oto-bar', '.cc-window', '#sbm-ss-btn', '#tramer-panel', '.ui-draggable-handle', ...(isKTTList ? ['.dropdown--user', '#menuArama'] : [])].join(',');
                             clonedDoc.querySelectorAll(removeSelectors).forEach(e => e.remove());
                             clonedDoc.querySelectorAll('[data-ks-culprit="true"]').forEach(el => {
                                 const scale = parseFloat(el.getAttribute('data-ks-scale'));
@@ -9210,7 +9520,7 @@ if (loc("eks_hasar_servis_src.php")) {
                     } else {
                         const shasiRaw = [...document.querySelectorAll('.fieldset-body b')].find(el => el.innerText.includes('*'))?.innerText.trim();
                         const shasi = shasiRaw ? shasiRaw.replace(/\*/g, '') : '';
-                        let rawName = document.querySelector('li.ui-tabs-active a, li[aria-selected="true"] a')?.innerText.trim().replace(/\s+/g, '_') || "SBM_Rapor";
+                        let rawName = unsafeWindow.__ksSSAd || document.querySelector('li.ui-tabs-active a, li[aria-selected="true"] a')?.innerText.trim().replace(/\s+/g, '_') || "SBM_Rapor";
                         const nameMap = { 'KTT': 'KTT_SBM' };
                         name = shasi ? `${shasi}_${nameMap[rawName] || rawName}` : (nameMap[rawName] || rawName);
                     }
@@ -9225,6 +9535,7 @@ if (loc("eks_hasar_servis_src.php")) {
                     if (ksGlobal) ksGlobal.style.display = 'block';
                 }
             };
+            unsafeWindow.__ksTakeSS = takeScreenshot;
             const initSsBtn = () => {
                 if (document.getElementById('sbm-ss-btn')) return;
                 if (!isSonuc && !isDetay && !isKTTList) return;
@@ -9251,18 +9562,18 @@ if (loc("eks_hasar_servis_src.php")) {
                 setTimeout(checkKTT, 1500);
                 setTimeout(checkKTT, 3000);
             }
-if (loc('trm-ktt/giris/yeni.sbm')) {
-    const TYPE_TABLE_SELECTOR = { '1': '#tutanakResim tbody', '2': '#resim tbody', '3': '#video tbody' };
-    const FILE_FIELD = 'dosyaBilgileriForm.dosya';
-    let queue = [], running = false, cancelled = false;
+            if (loc('trm-ktt/giris/yeni.sbm')) {
+                const TYPE_TABLE_SELECTOR = { '1': '#tutanakResim tbody', '2': '#resim tbody', '3': '#video tbody' };
+                const FILE_FIELD = 'dosyaBilgileriForm.dosya';
+                let queue = [], running = false, cancelled = false;
 
-    // ===== Sitenin kendi yükleme formunu güzelleştiren stil (sadece dosya alanı olan adımda etkin) =====
-    function injectPageStyle() {
-        if (document.getElementById('sbmPageStyle')) return;
-        const S = '#kttGirisForm .fieldset-body:has([id="dosyaBilgileriForm.dosya"])';
-        const st = document.createElement('style');
-        st.id = 'sbmPageStyle';
-        st.textContent = `
+                // ===== Sitenin kendi yükleme formunu güzelleştiren stil (sadece dosya alanı olan adımda etkin) =====
+                function injectPageStyle() {
+                    if (document.getElementById('sbmPageStyle')) return;
+                    const S = '#kttGirisForm .fieldset-body:has([id="dosyaBilgileriForm.dosya"])';
+                    const st = document.createElement('style');
+                    st.id = 'sbmPageStyle';
+                    st.textContent = `
         ${S} .field { margin-bottom: 16px; }
         ${S} .field-label { font-weight: 700; color: #334155; }
 
@@ -9315,139 +9626,139 @@ if (loc('trm-ktt/giris/yeni.sbm')) {
         ${S} .page-nav-notfound { padding: 8px 0; text-align: center; color: #94a3b8; font-style: italic; }
         ${S} .page-nav-desc { color: #64748b; font-size: 12px; }
         `;
-        document.head.appendChild(st);
-    }
-    injectPageStyle();
+                    document.head.appendChild(st);
+                }
+                injectPageStyle();
 
-    function setProgress(text, pct) { const p = document.getElementById('sbmBulkProgress'); if (p) p.textContent = text; const b = document.getElementById('sbmBulkBar'); if (b && typeof pct === 'number') b.style.width = pct + '%'; }
-    function getForm() { return document.getElementById('kttGirisForm'); }
-    function getRowCount(type) {
-        const sel = TYPE_TABLE_SELECTOR[type];
-        const tbody = document.querySelector(sel);
-        if (!tbody) return 0;
-        return tbody.querySelectorAll('tr').length;
-    }
+                function setProgress(text, pct) { const p = document.getElementById('sbmBulkProgress'); if (p) p.textContent = text; const b = document.getElementById('sbmBulkBar'); if (b && typeof pct === 'number') b.style.width = pct + '%'; }
+                function getForm() { return document.getElementById('kttGirisForm'); }
+                function getRowCount(type) {
+                    const sel = TYPE_TABLE_SELECTOR[type];
+                    const tbody = document.querySelector(sel);
+                    if (!tbody) return 0;
+                    return tbody.querySelectorAll('tr').length;
+                }
 
-    // id içinde nokta olduğu için getElementById / [id="..."] kullanılıyor (#id seçicisi çalışmaz)
-    function getNativeInput() {
-        return document.getElementById(FILE_FIELD)
-            || document.querySelector('input[type="file"][id="' + FILE_FIELD + '"]')
-            || document.querySelector('input[type="file"][name="' + FILE_FIELD + '"]');
-    }
+                // id içinde nokta olduğu için getElementById / [id="..."] kullanılıyor (#id seçicisi çalışmaz)
+                function getNativeInput() {
+                    return document.getElementById(FILE_FIELD)
+                        || document.querySelector('input[type="file"][id="' + FILE_FIELD + '"]')
+                        || document.querySelector('input[type="file"][name="' + FILE_FIELD + '"]');
+                }
 
-    function setFileToInput(file) {
-        const input = getNativeInput();
-        if (!input) return false;
-        const dt = new DataTransfer();
-        dt.items.add(file);
-        input.files = dt.files;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        return input.files && input.files.length === 1;
-    }
+                function setFileToInput(file) {
+                    const input = getNativeInput();
+                    if (!input) return false;
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    input.files = dt.files;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    return input.files && input.files.length === 1;
+                }
 
-    function selectType(type) {
-        const radio = document.querySelector(`input[name="dosyaBilgileriForm.dosyaTur"][value="${type}"]`);
-        if (!radio) return false;
-        radio.checked = true;
-        radio.dispatchEvent(new Event('change', { bubbles: true }));
-        const consent = document.getElementById('dosyaBilgileriForm.acikRizaOnayli1');
-        if (consent && !consent.checked) { consent.checked = true; consent.dispatchEvent(new Event('change', { bubbles: true })); }
-        return true;
-    }
+                function selectType(type) {
+                    const radio = document.querySelector(`input[name="dosyaBilgileriForm.dosyaTur"][value="${type}"]`);
+                    if (!radio) return false;
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change', { bubbles: true }));
+                    const consent = document.getElementById('dosyaBilgileriForm.acikRizaOnayli1');
+                    if (consent && !consent.checked) { consent.checked = true; consent.dispatchEvent(new Event('change', { bubbles: true })); }
+                    return true;
+                }
 
-    function clickAdd() {
-        const btn = document.querySelector('.js-btn--add');
-        if (!btn) return false;
-        btn.click();
-        return true;
-    }
+                function clickAdd() {
+                    const btn = document.querySelector('.js-btn--add');
+                    if (!btn) return false;
+                    btn.click();
+                    return true;
+                }
 
-    function waitForFormReload(timeoutMs) {
-        return new Promise((resolve, reject) => {
-            const form = getForm();
-            if (!form) { reject('form-not-found'); return; }
-            let done = false;
-            const observer = new MutationObserver(() => {
-                if (done) return;
-                done = true;
-                observer.disconnect();
-                clearTimeout(timer);
-                setTimeout(resolve, 400); // DOM'un oturması için küçük bekleme
-            });
-            observer.observe(form, { childList: true, subtree: false });
-            const timer = setTimeout(() => {
-                if (done) return;
-                done = true;
-                observer.disconnect();
-                reject('timeout');
-            }, timeoutMs);
-        });
-    }
+                function waitForFormReload(timeoutMs) {
+                    return new Promise((resolve, reject) => {
+                        const form = getForm();
+                        if (!form) { reject('form-not-found'); return; }
+                        let done = false;
+                        const observer = new MutationObserver(() => {
+                            if (done) return;
+                            done = true;
+                            observer.disconnect();
+                            clearTimeout(timer);
+                            setTimeout(resolve, 400); // DOM'un oturması için küçük bekleme
+                        });
+                        observer.observe(form, { childList: true, subtree: false });
+                        const timer = setTimeout(() => {
+                            if (done) return;
+                            done = true;
+                            observer.disconnect();
+                            reject('timeout');
+                        }, timeoutMs);
+                    });
+                }
 
-    async function uploadOne(file, type, index, total) {
-        setProgress(`Yükleniyor: ${index}/${total} — ${file.name}`, ((index - 1) / total) * 100);
-        kslog("SBM Çoklu Resim", ` : (${index}/${total}) ${file.name} yükleniyor...`);
-        const beforeCount = getRowCount(type);
-        if (!selectType(type)) { kslog("SBM Çoklu Resim", ' : Dosya türü radio butonu bulunamadı.'); return false; }
-        await new Promise(r => setTimeout(r, 150));
-        if (!setFileToInput(file)) { kslog("SBM Çoklu Resim", ' : Dosya seçme alanı (dosyaBilgileriForm.dosya) bulunamadı veya dosya atanamadı.'); return false; }
-        await new Promise(r => setTimeout(r, 150));
-        if (!clickAdd()) { kslog("SBM Çoklu Resim", ' : "Ekle" butonu bulunamadı.'); return false; }
-        try { await waitForFormReload(20000); } catch (e) { kslog("SBM Çoklu Resim", ` : ${file.name} için form yenilenmesi zaman aşımına uğradı, manuel kontrol edin.`); }
-        const errorBox = document.querySelector('.notice-error');
-        if (errorBox && errorBox.textContent.trim().length > 0) { kslog("SBM Çoklu Resim", ` : ${file.name} yüklenemedi -> ${errorBox.textContent.trim()}`); return false; }
-        const afterCount = getRowCount(type);
-        if (afterCount > beforeCount) { kslog("SBM Çoklu Resim", ` : ${file.name} yüklendi. (${afterCount}. kayıt)`); return true; }
-        kslog("SBM Çoklu Resim", ` : ${file.name} sonrası satır sayısı artmadı, manuel kontrol edin.`);
-        return false;
-    }
+                async function uploadOne(file, type, index, total) {
+                    setProgress(`Yükleniyor: ${index}/${total} — ${file.name}`, ((index - 1) / total) * 100);
+                    kslog("SBM Çoklu Resim", ` : (${index}/${total}) ${file.name} yükleniyor...`);
+                    const beforeCount = getRowCount(type);
+                    if (!selectType(type)) { kslog("SBM Çoklu Resim", ' : Dosya türü radio butonu bulunamadı.'); return false; }
+                    await new Promise(r => setTimeout(r, 150));
+                    if (!setFileToInput(file)) { kslog("SBM Çoklu Resim", ' : Dosya seçme alanı (dosyaBilgileriForm.dosya) bulunamadı veya dosya atanamadı.'); return false; }
+                    await new Promise(r => setTimeout(r, 150));
+                    if (!clickAdd()) { kslog("SBM Çoklu Resim", ' : "Ekle" butonu bulunamadı.'); return false; }
+                    try { await waitForFormReload(20000); } catch (e) { kslog("SBM Çoklu Resim", ` : ${file.name} için form yenilenmesi zaman aşımına uğradı, manuel kontrol edin.`); }
+                    const errorBox = document.querySelector('.notice-error');
+                    if (errorBox && errorBox.textContent.trim().length > 0) { kslog("SBM Çoklu Resim", ` : ${file.name} yüklenemedi -> ${errorBox.textContent.trim()}`); return false; }
+                    const afterCount = getRowCount(type);
+                    if (afterCount > beforeCount) { kslog("SBM Çoklu Resim", ` : ${file.name} yüklendi. (${afterCount}. kayıt)`); return true; }
+                    kslog("SBM Çoklu Resim", ` : ${file.name} sonrası satır sayısı artmadı, manuel kontrol edin.`);
+                    return false;
+                }
 
-    async function runQueue(type) {
-        running = true;
-        cancelled = false;
-        const total = queue.length;
-        let i = 0;
-        while (queue.length > 0 && !cancelled) {
-            i++;
-            const file = queue.shift();
-            await uploadOne(file, type, i, total);
-            await new Promise(r => setTimeout(r, 500));
-        }
-        running = false;
-        if (cancelled) { setProgress('İptal edildi.'); kslog("SBM Çoklu Resim", ' : Yükleme kuyruğu iptal edildi.'); }
-        else { setProgress(`Tamamlandı: ${total}/${total}`, 100); kslog("SBM Çoklu Resim", ' : Tüm dosyalar işlendi.'); }
-    }
+                async function runQueue(type) {
+                    running = true;
+                    cancelled = false;
+                    const total = queue.length;
+                    let i = 0;
+                    while (queue.length > 0 && !cancelled) {
+                        i++;
+                        const file = queue.shift();
+                        await uploadOne(file, type, i, total);
+                        await new Promise(r => setTimeout(r, 500));
+                    }
+                    running = false;
+                    if (cancelled) { setProgress('İptal edildi.'); kslog("SBM Çoklu Resim", ' : Yükleme kuyruğu iptal edildi.'); }
+                    else { setProgress(`Tamamlandı: ${total}/${total}`, 100); kslog("SBM Çoklu Resim", ' : Tüm dosyalar işlendi.'); }
+                }
 
-    function ensureWrapper() {
-        const form = getForm();
-        if (!form) return null;
-        let wrapper = form.parentElement;
-        if (!wrapper || wrapper.id !== 'sbmBulkWrapper') {
-            wrapper = document.createElement('div');
-            wrapper.id = 'sbmBulkWrapper';
-            wrapper.style.cssText = 'display:flex; align-items:flex-start; gap:16px; width:100%;';
-            form.parentNode.insertBefore(wrapper, form);
-            wrapper.appendChild(form);
-            form.style.flex = '1 1 0%';
-            form.style.minWidth = '0';
-        }
-        return wrapper;
-    }
+                function ensureWrapper() {
+                    const form = getForm();
+                    if (!form) return null;
+                    let wrapper = form.parentElement;
+                    if (!wrapper || wrapper.id !== 'sbmBulkWrapper') {
+                        wrapper = document.createElement('div');
+                        wrapper.id = 'sbmBulkWrapper';
+                        wrapper.style.cssText = 'display:flex; align-items:flex-start; gap:16px; width:100%;';
+                        form.parentNode.insertBefore(wrapper, form);
+                        wrapper.appendChild(form);
+                        form.style.flex = '1 1 0%';
+                        form.style.minWidth = '0';
+                    }
+                    return wrapper;
+                }
 
-    let selectedFiles = [];
+                let selectedFiles = [];
 
-    function fmtSize(b) {
-        if (b < 1024) return b + ' B';
-        if (b < 1048576) return (b / 1024).toFixed(0) + ' KB';
-        return (b / 1048576).toFixed(1) + ' MB';
-    }
+                function fmtSize(b) {
+                    if (b < 1024) return b + ' B';
+                    if (b < 1048576) return (b / 1024).toFixed(0) + ' KB';
+                    return (b / 1048576).toFixed(1) + ' MB';
+                }
 
-    function injectStyle() {
-        if (document.getElementById('sbmBulkStyle')) return;
-        const st = document.createElement('style');
-        st.id = 'sbmBulkStyle';
-        st.textContent = `
+                function injectStyle() {
+                    if (document.getElementById('sbmBulkStyle')) return;
+                    const st = document.createElement('style');
+                    st.id = 'sbmBulkStyle';
+                    st.textContent = `
         #sbmBulkPanel * { box-sizing: border-box; }
         #sbmBulkPanel .sbm-head { background: linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; padding:10px 14px; font-weight:bold; border-radius:8px 8px 0 0; font-size:14px; }
         #sbmBulkPanel .sbm-body { padding:14px; }
@@ -9473,50 +9784,50 @@ if (loc('trm-ktt/giris/yeni.sbm')) {
         #sbmBulkPanel .sbm-bar > div { height:100%; width:0; background:linear-gradient(90deg,#3b82f6,#22c55e); transition:width .25s ease; }
         #sbmBulkProgress { font-weight:bold; color:#334155; min-height:18px; }
         `;
-        document.head.appendChild(st);
-    }
+                    document.head.appendChild(st);
+                }
 
-    function refreshUI() {
-        const drop = document.getElementById('sbmDrop');
-        if (!drop) return;
-        const list = document.getElementById('sbmFileList');
-        const t1 = drop.querySelector('.sbm-t1');
-        const t2 = drop.querySelector('.sbm-t2');
-        const ico = drop.querySelector('.sbm-ico');
-        if (selectedFiles.length) {
-            drop.classList.add('sbm-has');
-            ico.textContent = '✅';
-            const total = selectedFiles.reduce((a, f) => a + f.size, 0);
-            t1.textContent = selectedFiles.length + ' dosya seçildi (' + fmtSize(total) + ')';
-            t2.textContent = 'Değiştirmek için tıkla veya yeni dosyaları bırak';
-            list.innerHTML = selectedFiles.map(f => '<div>• ' + f.name + ' <span style="color:#94a3b8">(' + fmtSize(f.size) + ')</span></div>').join('');
-        } else {
-            drop.classList.remove('sbm-has');
-            ico.textContent = '📁';
-            t1.textContent = 'Dosyaları buraya sürükle';
-            t2.textContent = 'veya tıklayıp seç (resim / video)';
-            list.innerHTML = '';
-        }
-        document.getElementById('sbmBulkStart').disabled = running || !selectedFiles.length;
-        document.getElementById('sbmBulkCancel').disabled = !running;
-    }
+                function refreshUI() {
+                    const drop = document.getElementById('sbmDrop');
+                    if (!drop) return;
+                    const list = document.getElementById('sbmFileList');
+                    const t1 = drop.querySelector('.sbm-t1');
+                    const t2 = drop.querySelector('.sbm-t2');
+                    const ico = drop.querySelector('.sbm-ico');
+                    if (selectedFiles.length) {
+                        drop.classList.add('sbm-has');
+                        ico.textContent = '✅';
+                        const total = selectedFiles.reduce((a, f) => a + f.size, 0);
+                        t1.textContent = selectedFiles.length + ' dosya seçildi (' + fmtSize(total) + ')';
+                        t2.textContent = 'Değiştirmek için tıkla veya yeni dosyaları bırak';
+                        list.innerHTML = selectedFiles.map(f => '<div>• ' + f.name + ' <span style="color:#94a3b8">(' + fmtSize(f.size) + ')</span></div>').join('');
+                    } else {
+                        drop.classList.remove('sbm-has');
+                        ico.textContent = '📁';
+                        t1.textContent = 'Dosyaları buraya sürükle';
+                        t2.textContent = 'veya tıklayıp seç (resim / video)';
+                        list.innerHTML = '';
+                    }
+                    document.getElementById('sbmBulkStart').disabled = running || !selectedFiles.length;
+                    document.getElementById('sbmBulkCancel').disabled = !running;
+                }
 
-    function setSelected(fileList) {
-        const files = Array.from(fileList).filter(f => /^(image|video)\//.test(f.type));
-        if (!files.length) { kslog("SBM Çoklu Resim", ' : Sadece resim/video dosyaları kabul edilir.'); return; }
-        selectedFiles = files;
-        refreshUI();
-    }
+                function setSelected(fileList) {
+                    const files = Array.from(fileList).filter(f => /^(image|video)\//.test(f.type));
+                    if (!files.length) { kslog("SBM Çoklu Resim", ' : Sadece resim/video dosyaları kabul edilir.'); return; }
+                    selectedFiles = files;
+                    refreshUI();
+                }
 
-    function buildPanel() {
-        if (document.getElementById('sbmBulkPanel')) return;
-        const wrapper = ensureWrapper();
-        if (!wrapper) return;
-        injectStyle();
-        const panel = document.createElement('div');
-        panel.id = 'sbmBulkPanel';
-        panel.style.cssText = 'flex:0 0 320px; align-self:flex-start; background:#fff; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.12); font-family:Arial,sans-serif; font-size:13px; position:sticky; top:16px;';
-        panel.innerHTML = `
+                function buildPanel() {
+                    if (document.getElementById('sbmBulkPanel')) return;
+                    const wrapper = ensureWrapper();
+                    if (!wrapper) return;
+                    injectStyle();
+                    const panel = document.createElement('div');
+                    panel.id = 'sbmBulkPanel';
+                    panel.style.cssText = 'flex:0 0 320px; align-self:flex-start; background:#fff; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.12); font-family:Arial,sans-serif; font-size:13px; position:sticky; top:16px;';
+                    panel.innerHTML = `
             <div class="sbm-head">📤 Toplu Resim/Video Yükleyici</div>
             <div class="sbm-body">
                 <label class="sbm-label">Dosya Türü</label>
@@ -9540,57 +9851,300 @@ if (loc('trm-ktt/giris/yeni.sbm')) {
                 <div id="sbmBulkProgress"></div>
             </div>
         `;
-        wrapper.appendChild(panel);
+                    wrapper.appendChild(panel);
 
-        const drop = document.getElementById('sbmDrop');
-        const input = document.getElementById('sbmBulkFiles');
+                    const drop = document.getElementById('sbmDrop');
+                    const input = document.getElementById('sbmBulkFiles');
 
-        drop.addEventListener('click', () => { if (!running) input.click(); });
-        input.addEventListener('change', () => { setSelected(input.files); input.value = ''; });
-        ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); drop.classList.add('sbm-over'); }));
-        ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); drop.classList.remove('sbm-over'); }));
-        drop.addEventListener('drop', e => { if (!running && e.dataTransfer) setSelected(e.dataTransfer.files); });
+                    drop.addEventListener('click', () => { if (!running) input.click(); });
+                    input.addEventListener('change', () => { setSelected(input.files); input.value = ''; });
+                    ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); drop.classList.add('sbm-over'); }));
+                    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); drop.classList.remove('sbm-over'); }));
+                    drop.addEventListener('drop', e => { if (!running && e.dataTransfer) setSelected(e.dataTransfer.files); });
 
-        document.getElementById('sbmBulkStart').addEventListener('click', async () => {
-            if (running) { kslog("SBM Çoklu Resim", ' : Zaten devam eden bir yükleme var.'); return; }
-            if (!getNativeInput()) { kslog("SBM Çoklu Resim", ' : dosyaBilgileriForm.dosya alanı bulunamadı.'); return; }
-            if (!selectedFiles.length) { kslog("SBM Çoklu Resim", ' : Lütfen önce dosya seçin.'); return; }
-            const type = document.getElementById('sbmBulkType').value;
-            queue = selectedFiles.slice();
-            selectedFiles = [];
-            refreshUI();
-            const p = runQueue(type);
-            refreshUI();
-            await p;
-            refreshUI();
-        });
-        document.getElementById('sbmBulkCancel').addEventListener('click', () => { cancelled = true; });
-        refreshUI();
-    }
+                    document.getElementById('sbmBulkStart').addEventListener('click', async () => {
+                        if (running) { kslog("SBM Çoklu Resim", ' : Zaten devam eden bir yükleme var.'); return; }
+                        if (!getNativeInput()) { kslog("SBM Çoklu Resim", ' : dosyaBilgileriForm.dosya alanı bulunamadı.'); return; }
+                        if (!selectedFiles.length) { kslog("SBM Çoklu Resim", ' : Lütfen önce dosya seçin.'); return; }
+                        const type = document.getElementById('sbmBulkType').value;
+                        queue = selectedFiles.slice();
+                        selectedFiles = [];
+                        refreshUI();
+                        const p = runQueue(type);
+                        refreshUI();
+                        await p;
+                        refreshUI();
+                    });
+                    document.getElementById('sbmBulkCancel').addEventListener('click', () => { cancelled = true; });
+                    refreshUI();
+                }
 
-    function isOnUploadStep() { return !!document.querySelector('.sbm-steps .sbm-step-7.sbm-step-current'); }
+                function isOnUploadStep() { return !!document.querySelector('.sbm-steps .sbm-step-7.sbm-step-current'); }
 
-    function teardownPanel() {
-        const wrapper = document.getElementById('sbmBulkWrapper');
-        if (wrapper) {
-            const form = getForm();
-            if (form && wrapper.parentNode) { wrapper.parentNode.insertBefore(form, wrapper); form.style.flex = ''; form.style.minWidth = ''; }
-            wrapper.remove();
+                function teardownPanel() {
+                    const wrapper = document.getElementById('sbmBulkWrapper');
+                    if (wrapper) {
+                        const form = getForm();
+                        if (form && wrapper.parentNode) { wrapper.parentNode.insertBefore(form, wrapper); form.style.flex = ''; form.style.minWidth = ''; }
+                        wrapper.remove();
+                    }
+                    cancelled = true;
+                    running = false;
+                }
+
+                function checkAndToggle() {
+                    const onUploadStep = isOnUploadStep();
+                    const panelExists = !!document.getElementById('sbmBulkPanel');
+                    if (onUploadStep && getForm() && !panelExists) { buildPanel(); }
+                    else if (!onUploadStep && panelExists) { teardownPanel(); }
+                }
+
+                checkAndToggle();
+                setInterval(checkAndToggle, 800);
+            }
         }
-        cancelled = true;
-        running = false;
-    }
+        if (SBM && (loc("trm-police/genelSorguEksper/sonuc")) || loc("trm-police/genelSorguEksper/sorguDetay")) {
+            const JOB = 'ks_sbm_job';
+            const JOB_OMUR = 10 * 60 * 1000; // 10 dk'dan eski yarım iş yok sayılır
+            const bekle = ms => new Promise(r => setTimeout(r, ms));
+            const temiz = s => (s || '').trim().replace(/\s+/g, ' ');
+            const lc = s => temiz(s).toLocaleLowerCase('tr');
+            const slug = s => lc(s).replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
 
-    function checkAndToggle() {
-        const onUploadStep = isOnUploadStep();
-        const panelExists = !!document.getElementById('sbmBulkPanel');
-        if (onUploadStep && getForm() && !panelExists) { buildPanel(); }
-        else if (!onUploadStep && panelExists) { teardownPanel(); }
-    }
+            const st0 = document.createElement('style');
+            st0.textContent = '@media print{#ks-oto-bar{display:none!important}} #ks-oto-bar.ks-calisiyor .ks-gizle, #ks-oto-bar.ks-calisiyor #sbm-ss-btn{display:none!important}';
+            document.head.appendChild(st0);
 
-    checkAndToggle();
-    setInterval(checkAndToggle, 800);
-}
+            // DOM sakinleşene kadar bekle (ajax içerik için)
+            const sakinles = (sessiz = 700, max = 8000) => new Promise(res => {
+                const bas = Date.now();
+                let t = setTimeout(done, sessiz);
+                const mo = new MutationObserver(() => {
+                    clearTimeout(t);
+                    t = setTimeout(done, Date.now() - bas > max ? 0 : sessiz);
+                });
+                function done() { mo.disconnect(); res(); }
+                mo.observe(document.body, { childList: true, subtree: true });
+            });
+
+            // Sayfa + aktif sekme içeriği + ajax + resimler hazır olana kadar bekle
+            const sayfaHazir = async () => {
+                for (let i = 0; i < 50 && document.readyState !== 'complete'; i++) await bekle(200);
+                const jq = unsafeWindow.jQuery;
+                for (let i = 0; i < 50; i++) {
+                    const ajax = jq ? jq.active > 0 : false;
+                    const panel = [...document.querySelectorAll('.ui-tabs-panel')]
+                        .find(p => p.getAttribute('aria-hidden') === 'false');
+                    const icerikVar = !panel || !!panel.querySelector('table, .page-nav-notfound') || temiz(panel.innerText).length >= 20;
+                    const yukleniyor = document.querySelector('.ajax-loader, .blockUI');
+                    if (!ajax && icerikVar && !yukleniyor) break;
+                    await bekle(200);
+                }
+                await sakinles(1200);
+                for (let i = 0; i < 15; i++) {
+                    if ([...document.images].every(im => im.complete)) break;
+                    await bekle(200);
+                }
+                await bekle(300);
+            };
+
+            const ssAl = async () => {
+                for (let i = 0; i < 25 && !document.getElementById('sbm-ss-btn'); i++) await bekle(200);
+                const f = unsafeWindow.__ksTakeSS;
+                if (!f) throw new Error('takeScreenshot bulunamadı');
+                await sayfaHazir();
+                await f();
+                await bekle(500);
+            };
+
+            const sekmeAc = async re => {
+                let a = null;
+                for (let i = 0; i < 12 && !a; i++) {
+                    a = [...document.querySelectorAll('a.ui-tabs-anchor')].find(e => re.test(lc(e.textContent)));
+                    if (!a) await bekle(300);
+                }
+                if (!a) return false;
+                const li = a.closest('li');
+                if (li && li.getAttribute('aria-selected') !== 'true') {
+                    a.click();
+                    for (let i = 0; i < 30; i++) {
+                        await bekle(200);
+                        if (li.getAttribute('aria-selected') === 'true') break;
+                    }
+                }
+                await sakinles(800);
+                return true;
+            };
+
+            const dosyaIndir = (blob, ad) => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob); a.download = ad; a.click();
+                setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+            };
+
+            // degerk_yıl_sigortaadı_raporno
+            const degerIndir = async () => {
+                let tbl = null, bos = false;
+                for (let i = 0; i < 40; i++) {                       // ~12 sn
+                    tbl = document.getElementById('ekspertizRapor');
+                    bos = !!tbl?.closest('.table-wrapper')?.querySelector('.page-nav-notfound');
+                    if (tbl && (tbl.querySelector('tbody tr') || bos)) break;
+                    await bekle(300);
+                }
+                if (!tbl) return -1;                                 // tablo hiç gelmedi: "rapor yok" sayma
+                let sayi = 0;
+                for (const tr of tbl.querySelectorAll('tbody tr')) {
+                    const td = [...tr.cells].map(c => temiz(c.innerText));
+                    const a = tr.querySelector('a.js-link--view:not(.disabled)'); if (!a) continue;
+                    const yil = (td[11].match(/\d{2}\/\d{2}\/(\d{4})/) || [])[1] || 'yil';
+                    const sirket = slug(td[4].replace(/s[iİ]gorta.*/i, ''));
+                    const r = await fetch(a.href, { credentials: 'include' });
+                    const blob = await r.blob();
+                    const ext = /pdf/i.test(blob.type) ? '.pdf' : /html/i.test(blob.type) ? '.html' : '';
+                    dosyaIndir(blob, `degerk_${yil}_${sirket}_${td[0]}${ext}`);
+                    sayi++;
+                    await bekle(600);
+                }
+                return sayi;
+            };
+
+            const TAB = {
+                trafikPolice: { ad: 'trafik_police', re: /trafik.*poli/ },
+                trafikHasar: { ad: 'trafik_hasar', re: /trafik.*hasar/ },
+                ktt: { ad: 'ktt', re: /^ktt|\bktt\b/ },
+                agir: { ad: 'agir_hasar', re: /a[ğg]ır\s*hasar/ },
+                kaskoPolice: { ad: 'kasko_police', re: /kasko.*poli/ },
+                kaskoHasar: { ad: 'kasko_hasar', re: /kasko.*hasar/ },
+                eksperRapor: { ad: 'eksper_rapor', re: /hasar eksper rapor/ },
+            };
+
+            // Butonlar + durum yazısı (tek satır, resimde görünmez)
+            const bar = Object.assign(document.createElement('div'), { id: 'ks-oto-bar' });
+            Object.assign(bar.style, {
+                position: 'fixed', bottom: '10px', right: '10px', zIndex: 10000,
+                display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', alignItems: 'center', gap: '6px',
+                float: 'none', width: 'auto', margin: 0, padding: 0
+            });
+            const durumEl = Object.assign(document.createElement('span'), { id: 'ks-oto-durum' });
+            Object.assign(durumEl.style, {
+                display: 'none', background: '#fff3cd', border: '1px solid #e0a800', padding: '6px 10px',
+                borderRadius: '4px', fontSize: '13px', whiteSpace: 'nowrap', color: '#000'
+            });
+            bar.appendChild(durumEl);
+            const durum = msg => { durumEl.textContent = msg; durumEl.style.display = msg ? 'inline-block' : 'none'; };
+
+            const isiBaslat = tip => {
+                const satirlar = [...document.querySelectorAll('#detayList tbody tr')].map(tr => ({
+                    tip: lc(tr.cells[0].innerText),
+                    sasi: temiz(tr.cells[4]?.innerText),
+                    href: tr.cells[4]?.querySelector('a')?.href
+                }));
+                const sig = satirlar.find(s => s.tip.includes('sigortalı') && s.href && s.sasi);
+                const biz = satirlar.find(s => s.tip.includes('karşı') && s.href && s.sasi);
+                const steps = [];
+                if (tip === 'trafik') {
+                    if (sig) steps.push({ url: sig.href, tabs: ['trafikPolice'] });
+                    if (biz) steps.push({ url: biz.href, tabs: ['trafikHasar', 'ktt', 'agir'], deger: true, degerYok: true });
+                } else if (tip === 'deger') {
+                    if (biz) steps.push({ url: biz.href, tabs: [], deger: true, degerYok: true });
+                } else if (sig) {
+                    steps.push({ url: sig.href, tabs: ['kaskoPolice', 'kaskoHasar', 'agir', 'ktt'] });
+                }
+                if (!steps.length) return alert('Şasi linki bulunamadı');
+                GM_setValue(JOB, { steps, t: Date.now() });
+                modAyarla();
+                run();
+            };
+
+            let calisiyor = false;
+            const run = async () => {
+                if (calisiyor) return;
+                const job = GM_getValue(JOB); if (!job) return;
+                if (!job.steps?.length || Date.now() - (job.t || 0) > JOB_OMUR) { GM_deleteValue(JOB); return; }
+                calisiyor = true;
+                let devam = false;
+                try {
+                    const st = job.steps[0];
+                    if (st.url && !st.gidildi) {
+                        st.gidildi = true; GM_setValue(JOB, job);
+                        durum('Şaseye gidiliyor...');
+                        location.href = st.url; return;
+                    }
+                    durum('Sayfa yükleniyor...');
+                    await sakinles(1000);
+                    for (const key of st.tabs) {
+                        const t = TAB[key];
+                        if (!t) { durum('Tanımsız sekme: ' + key); continue; }
+                        durum('Sekme: ' + t.ad);
+                        if (!(await sekmeAc(t.re))) { durum('Sekme BULUNAMADI: ' + t.ad); await bekle(1500); continue; }
+                        durum('Resim alınıyor: ' + t.ad);
+                        try { await ssAl(); }
+                        catch (e) { durum('Resim HATASI: ' + e.message); console.error(e); await bekle(3000); }
+                    }
+                    if (st.deger) {
+                        durum('Eksper Rapor sekmesi açılıyor...');
+                        await sekmeAc(TAB.eksperRapor.re);
+                        durum('Değer kaybı raporları indiriliyor...');
+                        let sayi = -1; // -1: hata oldu, "rapor yok" sayılmasın
+                        try { sayi = await degerIndir(); }
+                        catch (e) { durum('Rapor HATASI: ' + e.message); console.error(e); await bekle(3000); }
+                        if (st.degerYok && sayi === 0) {
+                            durum('Değer kaybı rapor yok, resim alınıyor...');
+                            unsafeWindow.__ksSSAd = 'Değer_Kaybı_Rapor_Yok';
+                            try { await ssAl(); }
+                            catch (e) { durum('Resim HATASI: ' + e.message); console.error(e); await bekle(3000); }
+                            finally { unsafeWindow.__ksSSAd = ''; }
+                        }
+                    }
+                    job.steps.shift(); GM_setValue(JOB, job);
+                    if (job.steps.length) devam = true;
+                    else { GM_deleteValue(JOB); durum('Bitti ✓'); setTimeout(() => durum(''), 4000); }
+                } catch (e) {
+                    console.error(e); durum('HATA: ' + e.message);
+                } finally { calisiyor = false; modAyarla(); }
+                if (devam) run();
+            };
+
+            [['TRAFİK', '#2e86c1', () => isiBaslat('trafik')],
+            ['KASKO', '#1e8449', () => isiBaslat('kasko')],
+            ['DEĞER KAYBI', '#d68910', () => isiBaslat('deger')],
+            ['İPTAL', '#c0392b', () => { GM_deleteValue(JOB); location.reload(); }]].forEach(([t, c, f]) => {
+                const b = Object.assign(document.createElement('button'), { textContent: t, type: 'button', onclick: f });
+                Object.assign(b.style, {
+                    display: 'inline-block', float: 'none', width: 'auto', margin: 0,
+                    background: c, color: '#fff', border: 0, borderRadius: '4px',
+                    padding: '8px 14px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap'
+                });
+                if (t !== 'İPTAL') b.className = 'ks-gizle';
+                bar.appendChild(b);
+            });
+            document.body.appendChild(bar);
+            const modAyarla = () => {
+                const job = GM_getValue(JOB);
+                const aktif = !!(job && job.steps?.length && Date.now() - (job.t || 0) <= JOB_OMUR);
+                bar.classList.toggle('ks-calisiyor', aktif);
+            };
+            modAyarla();
+            // Mevcut "Ekran Görüntüsü Al" butonunu aynı satıra taşı
+            const ssTasi = () => {
+                const b = document.getElementById('sbm-ss-btn');
+                if (!b) return false;
+                if (b.parentElement !== bar) {
+                    Object.assign(b.style, {
+                        position: 'static', right: 'auto', bottom: 'auto', float: 'none', margin: 0,
+                        display: 'inline-block', padding: '8px 14px', fontSize: '13px',
+                        fontWeight: 'bold', borderRadius: '4px', whiteSpace: 'nowrap'
+                    });
+                    bar.appendChild(b);
+                }
+                return true;
+            };
+            if (!ssTasi()) {
+                const iv = setInterval(() => { if (ssTasi()) clearInterval(iv); }, 300);
+            }
+
+            if (document.readyState === 'complete') setTimeout(run, 500);
+            else window.addEventListener('load', () => setTimeout(run, 500));
         }
         // SBM
         if (SBM && loc("online.sbm.org.tr/htm-eksrap/hasarEksper/onRapor/create.sbm")) {
@@ -10085,6 +10639,24 @@ if (loc('trm-ktt/giris/yeni.sbm')) {
                 panel.appendChild(area);
                 return panel;
             }
+            // ===== DETAY SCRİPTİNE EKLENECEK (2 yer) =====
+
+            // (1) `function ensureLayout() {` fonksiyonunun hemen ÜSTÜNE bu fonksiyonu ekle:
+            function saveInfoToList(panel) {
+                const st = unsafeWindow.__ksNot; // not bloğunun deposu
+                if (!st) return;
+                const no = getFieldValue(panel, 'Hasar Dosya No');
+                if (!no) return;
+                const { telefon, il, ilce } = getEkspertizYeriInfo(panel); // özet panelindekiyle aynı kaynak
+                const cur = st.get(no);
+                const patch = {};
+                const tel = formatPhone(telefon);
+                if (tel && tel !== cur.tel) patch.tel = tel;
+                if (il && il !== cur.il) patch.il = il;
+                if (ilce && ilce !== cur.ilce) patch.ilce = ilce;
+                if (Object.keys(patch).length) st.set(no, patch); // sadece değişince yazar
+            }
+
 
             // ---------------------------------------------------------------------
             // Düzen Yöneticisi
@@ -10101,6 +10673,7 @@ if (loc('trm-ktt/giris/yeni.sbm')) {
                 if (!summary) { summary = buildSummaryPanel(); }
                 if (summary.parentNode !== wrapper || wrapper.firstChild !== summary) { wrapper.insertBefore(summary, wrapper.firstChild); }
                 updateSummaryPanel(summary, target);
+                saveInfoToList(target);
                 let lowerWrapper = document.getElementById(LOWER_WRAPPER_ID);
                 if (!lowerWrapper) { lowerWrapper = document.createElement('div'); lowerWrapper.id = LOWER_WRAPPER_ID; wrapper.appendChild(lowerWrapper); }
                 if (target.parentNode !== lowerWrapper) { lowerWrapper.appendChild(target); }
@@ -11060,7 +11633,7 @@ if (loc('trm-ktt/giris/yeni.sbm')) {
                     btn.className = 'btn btn-sm btn-success me-1';
                     btn.innerHTML = '<i class="fa fa-clipboard"></i> Excel\'den Fiyat Güncelle';
                     btn.onclick = async (e) => {
-						e.preventDefault(); e.stopPropagation(); if (!document.getElementById('sp-table')) { alert('⚠️ Parça tablosu (sp-table) sayfada bulunamadı!\nÖnce parça tablosunun yüklendiğinden emin olun.'); return; }
+                        e.preventDefault(); e.stopPropagation(); if (!document.getElementById('sp-table')) { alert('⚠️ Parça tablosu (sp-table) sayfada bulunamadı!\nÖnce parça tablosunun yüklendiğinden emin olun.'); return; }
                         await runBulkPriceUpdate();
                     };
                     quickBtn.parentNode.insertBefore(btn, quickBtn.nextSibling);
