@@ -1,14 +1,15 @@
 // ==UserScript==
 // @name         KS TOOLS - Otoanaliz Oceanic Compact
 // @namespace    KS_TOOLS_Otoanaliz_Oceanic
-// @version      1.19
+// @version      1.20
 // @description  Düzeltilmiş, modern, kompakt tema.
 // @author       Saygın
-// @match        *://*/*
+// @include        *://*otohasar*/*
 // @grant        GM_addStyle
 // @exclude      *print*
-// @updateURL    https://github.com/sayginkizilkaya/Ks-Tools/raw/main/Ks_Tools_Ocean.user.js
-// @downloadURL  https://github.com/sayginkizilkaya/Ks-Tools/raw/main/Ks_Tools_Ocean.user.js
+// @exclude      https://otohasar.turkiyekatilimsigorta.com.tr/SKKOD/eks_hasar_yedpar_yeni_ref.php*
+// @updateURL    https://github.com/SayginKK/KsTools/raw/refs/heads/main/Ks_Tools_Ocean.user.js
+// @downloadURL  https://github.com/SayginKK/KsTools/raw/refs/heads/main/Ks_Tools_Ocean.user.js
 // ==/UserScript==
 (function () {
     'use strict';
@@ -24,133 +25,61 @@
 	if (loc('popup_modeller_magdur.php') || loc('popup_modeller.php')) {
         const tablo = document.querySelector('table[width="350"]');
         if (tablo) tablo.setAttribute('width', '450');
-
         const select = document.querySelector('select#MODEL_ID');
         if (select) select.style.width = '450px';
     }
     const overlay = document.createElement('div');
     overlay.id = 'ks-loading-overlay';
     Object.assign(overlay.style, {
-        display: 'none',
-        position: 'fixed',
+        display: 'none', position: 'fixed',
         top: '0', left: '0',
         width: '100%', height: '100%',
         background: 'rgba(15, 25, 50, 0.6)',
         backdropFilter: 'blur(4px)',
         zIndex: '99999999999',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: 'center', justifyContent: 'center',
     });
-
     overlay.innerHTML = `
-        <div style="
-            background: linear-gradient(135deg, #1a2a4a 0%, #2e4a7a 100%);
-            border-radius: 16px;
-            padding: 36px 52px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
-        ">
+        <div style=" background: linear-gradient(135deg, #1a2a4a 0%, #2e4a7a 100%); border-radius: 16px; padding: 36px 52px; display: flex; flex-direction: column; align-items: center; gap: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1); ">
             <div style="position:relative; width:56px; height:56px;">
-                <div style="
-                    position:absolute; inset:0;
-                    border: 4px solid rgba(255,255,255,0.1);
-                    border-top-color: #5dade2;
-                    border-right-color: #5dade2;
-                    border-radius: 50%;
-                    animation: ks-spin 0.7s linear infinite;
-                "></div>
-                <div style="
-                    position:absolute; inset:8px;
-                    border: 3px solid rgba(255,255,255,0.05);
-                    border-bottom-color: #a9cce3;
-                    border-radius: 50%;
-                    animation: ks-spin 1.2s linear infinite reverse;
-                "></div>
+                <div style=" position:absolute; inset:0; border: 4px solid rgba(255,255,255,0.1); border-top-color: #5dade2; border-right-color: #5dade2; border-radius: 50%; animation: ks-spin 0.7s linear infinite; "></div>
+                <div style=" position:absolute; inset:8px; border: 3px solid rgba(255,255,255,0.05); border-bottom-color: #a9cce3; border-radius: 50%; animation: ks-spin 1.2s linear infinite reverse; "></div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-                <span style="
-                    font-size: 15px;
-                    font-weight: 700;
-                    color: #fff;
-                    letter-spacing: 1px;
-                ">KAYDEDİLİYOR</span>
-                <span style="
-                    font-size: 11px;
-                    color: rgba(255,255,255,0.5);
-                    letter-spacing: 0.5px;
-                ">Lütfen bekleyiniz...</span>
+                <span style=" font-size: 15px; font-weight: 700; color: #fff; letter-spacing: 1px; ">KAYDEDİLİYOR</span>
+                <span style=" font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 0.5px; ">Lütfen bekleyiniz...</span>
             </div>
-            <div style="
-                display: flex;
-                gap: 5px;
-                align-items: center;
-            ">
+            <div style=" display: flex; gap: 5px; align-items: center; ">
                 <span style="width:7px;height:7px;border-radius:50%;background:#5dade2;animation:ks-dot 1.2s ease-in-out 0s infinite;display:inline-block;"></span>
                 <span style="width:7px;height:7px;border-radius:50%;background:#5dade2;animation:ks-dot 1.2s ease-in-out 0.2s infinite;display:inline-block;"></span>
                 <span style="width:7px;height:7px;border-radius:50%;background:#5dade2;animation:ks-dot 1.2s ease-in-out 0.4s infinite;display:inline-block;"></span>
             </div>
         </div>
     `;
-
     const style = document.createElement('style');
     style.textContent = `
         @keyframes ks-spin { to { transform: rotate(360deg); } }
-        @keyframes ks-dot {
-            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-            40% { transform: scale(1.2); opacity: 1; }
-        }
+        @keyframes ks-dot { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1.2); opacity: 1; } }
     `;
     document.head.appendChild(style);
     document.body.appendChild(overlay);
-
     const showOverlay = () => { overlay.style.display = 'flex'; };
     const hideOverlay = () => { overlay.style.display = 'none'; };
-
     const indicator = document.getElementById('indicator_2');
-    if (indicator) {
-        const observer = new MutationObserver(() => {
-            if (indicator.offsetWidth > 0 || indicator.offsetHeight > 0) {
-                showOverlay();
-            } else {
-                hideOverlay();
-            }
-        });
-        observer.observe(indicator, { attributes: true, attributeFilter: ['style'] });
-    }//btnKaydet1
+    if (indicator) { const observer = new MutationObserver(() => { if (indicator.offsetWidth > 0 || indicator.offsetHeight > 0) { showOverlay(); } else { hideOverlay(); } }); observer.observe(indicator, { attributes: true, attributeFilter: ['style'] }); }
+	//btnKaydet1
     const kaydetBtn = document.querySelector('input[name="btnKaydet2"]') || document.querySelector('input[name="Submit"][value=" KAYDET "]');
-    if (kaydetBtn) {
-        kaydetBtn.addEventListener('click', () => {
-            showOverlay();
-        });
-    }
-    	// tw-sack Ajax tamamlanınca overlay kapat
+    if (kaydetBtn) { kaydetBtn.addEventListener('click', () => { showOverlay(); }); }
+    // tw-sack Ajax tamamlanınca overlay kapat
     const _origOnCompletion = window.oCompletion;
-    window.oCompletion = function(...args) {
-        hideOverlay();
-        return _origOnCompletion?.apply(window, args);
-    };
-
+    window.oCompletion = function(...args) { hideOverlay(); return _origOnCompletion?.apply(window, args); };
     // Yedek: XHR bitince de kapat
     const _origXHROpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(...args) {
-        this.addEventListener('loadend', () => {
-            hideOverlay();
-        });
-        return _origXHROpen.apply(this, args);
-    };
+    XMLHttpRequest.prototype.open = function(...args) { this.addEventListener('loadend', () => { hideOverlay(); }); return _origXHROpen.apply(this, args); };
     const _origAlert = window.alert;
-    window.alert = function(...args) {
-        hideOverlay();
-        return _origAlert.apply(window, args);
-    };
+    window.alert = function(...args) { hideOverlay(); return _origAlert.apply(window, args); };
     const _origConfirm = window.confirm;
-    window.confirm = function(...args) {
-        hideOverlay();
-        return _origConfirm.apply(window, args);
-    };
+    window.confirm = function(...args) { hideOverlay(); return _origConfirm.apply(window, args); };
 	/*****////
     if (url.includes("otohasar") && !url.includes("loginfrm") && !url.includes("eks_hasar_yedpar_yeni_ref") && !url.includes("eks_hasar_yedpar_yeni_liste")) {
         const urls = [
@@ -258,7 +187,16 @@
                -5px 0 3px 1px rgba(0, 0, 0, 0);
            transition: box-shadow 0.3s ease-in-out, transform 0.3s ease;
        }
-	   img[src="/images/pixel.gif"] { content: url("${randomUrl}") !important; object-fit: contain; border: none !important; outline: none !important; background: transparent !important; box-shadow: none !important; }
+	   img[src="/images/pixel.gif"] {
+	     content: url("${randomUrl}") !important;
+	     object-fit: contain;
+	     max-width: 75px !important;
+	     max-height: 75px !important;
+	     border: none !important;
+	     outline: none !important;
+	     background: transparent !important;
+	     box-shadow: none !important;
+	   }
        .modern-nav-container:hover {
            box-shadow:
 			   5px 0 1px 1px rgba(240, 249, 255, 1),
