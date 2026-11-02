@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         KS TOOLS PANEL
 // @namespace    KS_TOOLS_PANEL
-// @version      1.97
+// @version      1.98
 // @license      GPL-3.0
 // @description  OtoHasar Dinamik Form Panel / Parça - Manuel ve Çoklu ekleme / Donanim Panel / SBM Tramer no ayırma ve resim indirme / Wp resim indirme / Gelişmiş Hasar Analiz / PDF -> JPG Dönüştürme ve boyutlandırma
 // @author       Saygın
@@ -9287,14 +9287,14 @@
                     syncList();
 
                     // ---------- list.sbm açılınca "Levha No" seçeneğini otomatik seç ----------
-                    if (loc("atama/list.sbm")) {
+                    if (loc("atama/list.sbm") || loc("atama/sorgu.sbm")) {
                         let denemeSayi = 0;
                         const lvIv = setInterval(() => {
                             const el = document.getElementById('selectedSection4');
                             if (el) {
                                 clearInterval(lvIv);
-                                if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) el.click();   // click: sitenin kendi change olayları da çalışsın
-                            } else if (++denemeSayi > 40) { clearInterval(lvIv); }   // ~10 sn bulunamazsa vazgeç
+                                if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) el.click(); // click: sitenin kendi change olayları da çalışsın
+                            } else if (++denemeSayi > 40) { clearInterval(lvIv); } // ~10 sn bulunamazsa vazgeç
                         }, 250);
                     }
 
@@ -11882,6 +11882,133 @@
             }
             scan(document);
             new MutationObserver(muts => { for (const m of muts) { m.addedNodes.forEach(n => { if (n.nodeType === 1) scan(n); }); } }).observe(document.body, { childList: true, subtree: true });
+            if (loc('supply-transactions')) {
+				const HEADERS = [
+				    'Satır Tipi', 'Parça ID', 'Fatura No', 'Fatura Tarihi', 'Kargo', 'SGN No',
+				    'Parça Kodu', 'Parça Adı', 'Adet', 'Parça Tipi', 'Sistem Fiyatı',
+				    'Tedarikçi Fiyatı', 'Tedarikçi Oranı', 'Eş Değer Markası', 'Eş Değer Kodu',
+				    'Tedarik Durumu', 'Durum Notu', 'Tedarikçi Açıklaması', 'Tedarikçi',
+				    'Parça Kaynağı', 'Parça Kayıt Tarihi', 'Sipariş Zamanı',
+				    'Tedarikçi Yanıt Zamanı', 'Tahmini Teslim Tarihi', 'Cevap Verme Süresi', 'Teslim Süresi'
+				  ];
+
+				  const clean = (s) => (s || '').replace(/[\t\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+
+				  function tooltipDoc(el) {
+				    const raw = el && el.getAttribute('data-bs-original-title');
+				    return raw ? new DOMParser().parseFromString(raw, 'text/html') : null;
+				  }
+
+				  function tooltipField(td, label) {
+				    const span = td.querySelector('[data-bs-original-title]');
+				    const doc = tooltipDoc(span);
+				    if (!doc) return '';
+				    for (const b of doc.querySelectorAll('b')) {
+				      if (b.textContent.trim().replace(':', '') === label) {
+				        return clean(b.parentElement.textContent.replace(b.textContent, ''));
+				      }
+				    }
+				    return '';
+				  }
+
+				  function rowToArray(tr) {
+				    const td = tr.children;
+				    const get = (i) => (td[i] ? clean(td[i].textContent) : '');
+
+				    // Fatura
+				    let faturaNo = '', faturaTarih = '';
+				    td[1] && td[1].querySelectorAll('li').forEach((li) => {
+				      const label = clean(li.querySelector('label')?.textContent);
+				      const val = clean(li.querySelector('span.fw-bolder')?.textContent);
+				      if (label.startsWith('Fatura No')) faturaNo = val;
+				      if (label.startsWith('Fatura Tarihi')) faturaTarih = val;
+				    });
+
+				    // Eş değer marka + kod
+				    const brand = get(11);
+				    const altKod = td[11] ? tooltipField(td[11], 'Kodu') : '';
+
+				    // Durum + not
+				    const statusBadge = td[12]?.querySelector('.badge');
+				    const statusText = clean(statusBadge?.childNodes[0]?.textContent || statusBadge?.textContent);
+				    let statusNote = '';
+				    const sDoc = tooltipDoc(statusBadge);
+				    if (sDoc) statusNote = clean(sDoc.body.textContent);
+
+				    // Tedarikçi adı (ikon paragrafı hariç)
+				    let supplier = '';
+				    if (td[14]) {
+				      const c = td[14].cloneNode(true);
+				      c.querySelectorAll('p').forEach((p) => p.remove());
+				      supplier = clean(c.textContent);
+				    }
+
+				    return [
+				      tr.classList.contains('sub') ? 'Alt' : 'Ana',
+				      tr.dataset.partId || '',
+				      faturaNo, faturaTarih,
+				      get(2), get(3), get(4), get(5), get(6), get(7),
+				      get(8), get(9), get(10),
+				      brand, altKod,
+				      statusText, statusNote,
+				      get(13), supplier, get(15),
+				      get(16), get(17), get(18), get(19), get(20), get(21)
+				    ];
+				  }
+
+				  function buildTSV() {
+				    const rows = document.querySelectorAll('#tableSupplyTransactions tbody tr');
+				    const lines = [HEADERS.join('\t')];
+				    rows.forEach((tr) => {
+				      if (tr.children.length < 20) return;
+				      lines.push(rowToArray(tr).join('\t'));
+				    });
+				    return { text: lines.join('\r\n'), count: lines.length - 1 };
+				  }
+
+				  async function copyText(text) {
+				    try {
+				      await navigator.clipboard.writeText(text);
+				    } catch (e) {
+				      if (typeof GM_setClipboard === 'function') GM_setClipboard(text);
+				      else {
+				        const ta = document.createElement('textarea');
+				        ta.value = text;
+				        document.body.appendChild(ta);
+				        ta.select();
+				        document.execCommand('copy');
+				        ta.remove();
+				      }
+				    }
+				  }
+
+				  function init() {
+				    if (document.getElementById('ks-copy-excel-btn')) return;
+				    const btn = document.createElement('button');
+				    btn.id = 'ks-copy-excel-btn';
+				    btn.type = 'button';
+				    btn.textContent = '📋 Excel\'e Kopyala';
+				    Object.assign(btn.style, {
+				      position: 'fixed', right: '20px', bottom: '20px', zIndex: 99999,
+				      padding: '10px 16px', background: '#217346', color: '#fff',
+				      border: 'none', borderRadius: '6px', fontSize: '14px', fontWeight: '600',
+				      cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,.3)'
+				    });
+				    btn.addEventListener('click', async () => {
+				      const { text, count } = buildTSV();
+				      if (!count) { btn.textContent = '⚠ Satır bulunamadı'; }
+				      else {
+				        await copyText(text);
+				        btn.textContent = `✔ ${count} satır kopyalandı`;
+				      }
+				      setTimeout(() => (btn.textContent = '📋 Excel\'e Kopyala'), 2000);
+				    });
+				    document.body.appendChild(btn);
+				  }
+
+				  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+				  else init();
+			}
         }
         // Yazıyı hafızada tutma sistemi
         if (ONBELLEK) {
